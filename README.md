@@ -10,10 +10,16 @@ _test.check_ used to be called
 
 ## Releases and Dependency Information
 
+As of version `0.9.0`, test.check requires Clojure >= `1.7.0`.
+
+Please note a
+[breaking change for ClojureScript](https://github.com/clojure/test.check/blob/master/CHANGELOG.markdown#080)
+in the `0.8.*` releases.
+
 ### Leiningen
 
 ```clojure
-[org.clojure/test.check "0.5.8"]
+[org.clojure/test.check "0.9.0"]
 ```
 
 ### Maven
@@ -22,7 +28,7 @@ _test.check_ used to be called
 <dependency>
   <groupId>org.clojure</groupId>
   <artifactId>test.check</artifactId>
-  <version>0.5.8</version>
+  <version>0.9.0</version>
 </dependency>
 ```
 
@@ -36,6 +42,8 @@ _test.check_ version numbers start where _simple-check_ left off: 0.5.7.
 
 ## Documentation
 
+  * [API Docs](http://clojure.github.io/test.check/)
+  * [Cheatsheet](https://github.com/clojure/test.check/blob/master/doc/cheatsheet.md)
   * [Generator writing guide](doc/intro.md)
   * Examples (some of these may refer to simple-check):
     * [core.matrix](https://github.com/mikera/core.matrix/blob/c45ee6b551a50a509e668f46a1ae52ade2c52a82/src/test/clojure/clojure/core/matrix/properties.clj)
@@ -47,39 +55,24 @@ _test.check_ version numbers start where _simple-check_ left off: 0.5.7.
     * [Check your work - 8th Light](http://blog.8thlight.com/connor-mendenhall/2013/10/31/check-your-work.html)
     * [Writing simple-check - Reid Draper](http://reiddraper.com/writing-simple-check/)
     * [Generative testing in Clojure - Youtube](https://www.youtube.com/watch?v=u0TkAw8QqrQ)
-    * [Using simple-check with Expectations - Curtis Gagliardi](http://curtis.io/posts/using-simple-check-with-expectations.html)
+    * [Using simple-check with Expectations - Curtis Gagliardi](http://curtis.io/using-simple-check-with-expectations)
 
 ## Migrating from simple-check
 
-In order to migrate from _simple-check_ to _test.check_, you'll need to do two
-things:
+See [migrating from simple-check](doc/migrating-from-simple-check.md).
 
-* Update project.clj
+## Useful libraries
 
-    In your `project.clj` replace `[reiddraper/simple-check "0.5.6"]` with
-    `[org.clojure/test.check "0.5.8"]` (note: your version numbers may be
-    different).
-
-* Update namespace declarations
-
-    Update your namespaces: `simple-check.core` becomes `clojure.test.check` (note
-    the dropping of 'core'). Everything else you can simply replace `simple-check`
-    with `clojure.test.check`. Let's make it easy:
-
-    ```shell
-    find test -name '*.clj' -print0 | xargs -0 sed -i.bak \
-    -e 's/simple-check.core/clojure.test.check/' \
-    -e 's/simple-check/clojure.test.check/'
-    ```
-
-    Review the updates.
+* [test.chuck](https://github.com/gfredericks/test.chuck)
+* [collection-check](https://github.com/ztellman/collection-check)
+* [herbert](https://github.com/miner/herbert)
 
 ## Examples
 
-Let's say we're testing a sort function. We want want to check that that our
-sort function is idempotent, that is, applying sort twice should be
-equivalent to applying it once: `(= (sort a) (sort (sort a)))`. Let's write a
-quick test to make sure this is the case:
+Let's say we're testing a sort function. We want to check that that our sort
+function is idempotent, that is, applying sort twice should be equivalent to
+applying it once: `(= (sort a) (sort (sort a)))`. Let's write a quick test to
+make sure this is the case:
 
 ```clojure
 (require '[clojure.test.check :as tc])
@@ -98,7 +91,7 @@ In prose, this test reads: for all vectors of integers, `v`, sorting `v` is
 equal to sorting `v` twice.
 
 What happens if our test fails? _test.check_ will try and find 'smaller'
-input that still fails. This process is called shrinking. Let's see it in
+inputs that still fail. This process is called shrinking. Let's see it in
 action:
 
 ```clojure
@@ -118,7 +111,7 @@ the last. Of course, this isn't true: the test fails with input `[3]`, which
 gets shrunk down to `[0]`, as seen in the output above. As your test functions
 require more sophisticated input, shrinking becomes critical to being able
 to understand exactly why a random test failed. To see how powerful shrinking
-is, let's come up with a contrived example: a function that fails if its
+is, let's come up with a contrived example: a function that fails if it's
 passed a sequence that contains the number 42:
 
 ```clojure
@@ -145,16 +138,42 @@ To learn more, check out the [documentation](#documentation) links.
 
 ### `clojure.test` Integration
 
-There is a macro called `defspec` that allows you to succinctly write
-properties that run under the `clojure.test` runner, for example:
+The macro `clojure.test.check.clojure-test/defspec` allows you to succinctly
+write properties that run under the `clojure.test` runner, for example:
 
 ```clojure
 (defspec first-element-is-min-after-sorting ;; the name of the test
          100 ;; the number of iterations for test.check to test
-         (prop/for-all [v (such-that not-empty (gen/vector gen/int))]
+         (prop/for-all [v (gen/not-empty (gen/vector gen/int))]
            (= (apply min v)
-              (first (sorted v)))))
+              (first (sort v)))))
 ```
+
+### ClojureScript
+
+ClojureScript support was added in version `0.7.0`.
+
+The first _test.check_ example needs only minor modifications for
+ClojureScript:
+
+```clojure
+(ns cljs.user
+  (:require [clojure.test.check :as tc]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop :include-macros true]))
+
+(def sort-idempotent-prop
+  (prop/for-all [v (gen/vector gen/int)]
+    (= (sort v) (sort (sort v)))))
+
+(tc/quick-check 100 sort-idempotent-prop)
+;; => {:result true, :num-tests 100, :seed 1382488326530}
+```
+
+The remaining examples need no further changes. Integrating with
+`cljs.test` is via the `clojure.test.check.clojure-test/defspec`
+macro, in the same fashion as integration with `clojure.test` on the
+jvm.
 
 ## Release Notes
 
@@ -179,6 +198,18 @@ Release notes for each version are available in
 
 We can not accept pull requests. Please see [CONTRIBUTING.md](CONTRIBUTING.md)
 for details.
+
+## YourKit
+
+![YourKit](http://www.yourkit.com/images/yklogo.png)
+
+YourKit is kindly supporting test.check and other open source projects with its
+full-featured Java Profiler.  YourKit, LLC is the creator of innovative and
+intelligent tools for profiling Java and .NET applications. Take a look at
+YourKit's leading software products:
+
+* <a href="http://www.yourkit.com/java/profiler/index.jsp">YourKit Java Profiler</a> and
+* <a href="http://www.yourkit.com/.net/profiler/index.jsp">YourKit .NET Profiler</a>
 
 ## License
 

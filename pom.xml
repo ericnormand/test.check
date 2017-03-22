@@ -2,14 +2,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>test.check</artifactId>
-  <version>0.5.9-SNAPSHOT</version>
-  <name>${project.artifactId}</name>
+  <version>0.9.1-SNAPSHOT</version>
+  <name>test.check</name>
   <description>A QuickCheck inspired property-based testing library</description>
+  <url>https://github.com/clojure/build.poms</url>
 
   <parent>
     <groupId>org.clojure</groupId>
     <artifactId>pom.contrib</artifactId>
-    <version>0.1.2</version>
+    <version>0.2.2</version>
   </parent>
 
   <licenses>
@@ -29,11 +30,17 @@
   </developers>
 
   <properties>
-    <clojure.version>1.5.1</clojure.version>
+    <clojure.version>1.7.0</clojure.version>
     <clojure.warnOnReflection>true</clojure.warnOnReflection>
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>org.clojure</groupId>
+      <artifactId>clojurescript</artifactId>
+      <version>1.7.48</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <scm>
@@ -42,4 +49,5 @@
     <url>http://github.com/clojure/test.check</url>
     <tag>HEAD</tag>
   </scm>
+
 </project>
